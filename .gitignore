@@ -1,29 +1,167 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+#define INDEFINIDO -1
+#define LEDVERDE 2
+#define LEDAMARELO 3
+#define LEDVERMELHO 4
+#define LEDAZUL 5
 
-# Precompiled Headers
-*.gch
-*.pch
+#define BotaoVerde 8
+#define BotaoAmarelo 9
+#define BotaoVermelho 10
+#define BotaoAzul 11
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+#define TAMANHOSEQUENCIA 4
 
-# Fortran module files
-*.mod
-*.smod
+int sequencialuzes[TAMANHOSEQUENCIA];
+int rodada = 0;
+int ledsresp = 0;
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+enum Estados{
+  ProntoProx,
+  RespUsuario,
+  JogoSuces,
+  JogoFalha,
+};
 
-# Executables
-*.exe
-*.out
-*.app
+void setup() {
+Serial.begin(9600);
+iniciaportas();
+iniciajogo();
+}
+
+void loop() {
+  switch(estadoAtual()){
+    case ProntoProx:
+    Serial.println("pronto para proxima rodada");
+    preparaNovaRodada();
+    break;
+    case RespUsuario:
+    Serial.println("ususario respondendo");
+    processaResposta();
+    break;
+    case JogoSuces:
+    Serial.println("jogo finalizado com sucesso");
+    piscasequencia1();
+    piscasequencia2();
+    break;
+    case JogoFalha:
+    Serial.println("jogo finalizado com falha");
+    piscasequencia2();
+    break;
+  }
+  delay(500);
+}
+
+void preparaNovaRodada(){
+  rodada++;
+  ledsresp = 0;
+  if(rodada <= TAMANHOSEQUENCIA){
+  tocaLedRodada();
+  }
+}
+
+void processaResposta(){
+  int resposta = checaResposta();
+  if(resposta == INDEFINIDO){
+    return;
+  }
+  if(resposta == sequencialuzes[ledsresp]){
+  ledsresp++;
+  }
+  else{
+   rodada = TAMANHOSEQUENCIA + 2;
+  }
+}
+
+int estadoAtual(){
+  if(rodada <= TAMANHOSEQUENCIA){
+    if(ledsresp == rodada){
+      return ProntoProx;
+    }
+    else{
+      return RespUsuario;
+    }
+  }
+  else if(rodada == TAMANHOSEQUENCIA + 1){
+    return JogoSuces;
+  }
+  else{
+    return JogoFalha;
+  }
+}
+
+void tocaLedRodada(){
+  for(int i = 0; i < rodada; i++){
+    piscaled(sequencialuzes[i]);
+  }
+}
+
+int checaResposta(){
+  if(digitalRead(BotaoVerde) == LOW){
+    piscaled(LEDVERDE);
+    return LEDVERDE;
+  }
+    if(digitalRead(BotaoAmarelo) == LOW){
+    piscaled(LEDAMARELO);
+    return LEDAMARELO;
+  }
+    if(digitalRead(BotaoVermelho) == LOW){
+    piscaled(LEDVERMELHO);
+    return LEDVERMELHO;
+  }
+    if(digitalRead(BotaoAzul) == LOW){
+     piscaled(LEDAZUL);
+     return LEDAZUL;
+  }
+  return INDEFINIDO;
+}
+
+void piscaled(int portadoled){
+digitalWrite(portadoled,HIGH);
+delay(1000);
+digitalWrite(portadoled,LOW);
+delay(500);
+}
+
+void iniciajogo(){
+  int jogo = analogRead(0);
+  randomSeed(jogo);
+  for(int i = 0; i < TAMANHOSEQUENCIA; i++){
+    sequencialuzes[i] = sorteaCor();
+  }
+}
+
+int sorteaCor(){
+  return random(LEDVERDE,LEDAZUL + 1);
+}
+
+void iniciaportas(){
+  pinMode(LEDVERDE,OUTPUT);
+  pinMode(LEDAMARELO,OUTPUT);
+  pinMode(LEDVERMELHO,OUTPUT);
+  pinMode(LEDAZUL,OUTPUT);
+  pinMode(BotaoVerde,INPUT_PULLUP);
+  pinMode(BotaoAmarelo,INPUT_PULLUP);
+  pinMode(BotaoVermelho,INPUT_PULLUP);
+  pinMode(BotaoAzul,INPUT_PULLUP);
+}
+
+void piscasequencia1(){
+piscaled(LEDVERDE);
+piscaled(LEDAMARELO);
+piscaled(LEDVERMELHO);
+piscaled(LEDAZUL);
+delay(500);
+}
+
+void piscasequencia2(){
+digitalWrite(LEDVERDE,HIGH);
+digitalWrite(LEDAMARELO,HIGH);
+digitalWrite(LEDVERMELHO,HIGH);
+digitalWrite(LEDAZUL,HIGH);
+delay(1000);
+digitalWrite(LEDVERDE,LOW);
+digitalWrite(LEDAMARELO,LOW);
+digitalWrite(LEDVERMELHO,LOW);
+digitalWrite(LEDAZUL,LOW);
+delay(500);
+}
